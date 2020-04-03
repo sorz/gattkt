@@ -1,4 +1,4 @@
-# GattIO
+# GattKt
 
 Android library that convert `BluetoothGattCallback` to ergonomic Kotlin
 coroutines API.
