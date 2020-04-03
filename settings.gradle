@@ -1,0 +1,2 @@
+include ':gattkt'
+rootProject.name = "GattKt"
