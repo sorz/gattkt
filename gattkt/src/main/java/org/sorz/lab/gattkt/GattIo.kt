@@ -117,7 +117,7 @@ class GattIo internal constructor(
 
     internal suspend fun connect() {
         if (connectContinuation != null) throw IllegalStateException("repeated invoking connect()")
-        suspendCoroutine { cont: Continuation<Unit> ->
+        suspendCancellableCoroutine { cont: Continuation<Unit> ->
             connectContinuation = cont
             debug { "connecting to $device" }
             device.connectGatt(context, true, gattCallback)
@@ -208,6 +208,12 @@ class GattIo internal constructor(
             charChangeCont.remove(char.uuid)
         }
     }
+
+    /**
+     * Get GATT service, throw IOException if not found.
+     */
+    fun requireService(uuid: UUID): BluetoothGattService =
+        gatt.getService(uuid) ?: throw IOException("missing service $uuid")
 
     /**
      * Remove queued notification & indication for given characteristic.
