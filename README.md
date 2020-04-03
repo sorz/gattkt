@@ -23,19 +23,19 @@ PR is welcome if you need more functions.
 ## Example
 
 ```kotlin
-    suspend fun handleAwesomeDevice(context: Context, device: BluetoothDevice) {
-        val gattIo = device.connectGattIo(context)
-        val service = gattIo.requireService(UUID_SOME_SERVICE)
-        val char = service.getCharacteristic(UUID_SOME_CHAR)!!
+suspend fun handleAwesomeDevice(context: Context, device: BluetoothDevice) {
+    val gattIo = device.connectGattIo(context)
+    val service = gattIo.requireService(UUID_SOME_SERVICE)
+    val char = service.getCharacteristic(UUID_SOME_CHAR)!!
 
-        gattIo.enableNotification(char)
-        gattIo.writeCharacteristic(char, byteArrayOf(...))
-        val resp = gattIo.readCharacteristicChange(char)
-        println("response: ${resp.contentToString()}")
-        gattIo.disableNotificationOrIndication(char)
+    gattIo.enableNotification(char)
+    gattIo.writeCharacteristic(char, byteArrayOf(...))
+    val resp = gattIo.readCharacteristicChange(char)
+    println("response: ${resp.contentToString()}")
+    gattIo.disableNotificationOrIndication(char)
 
-        gattIo.gatt.close()
-    }
+    gattIo.gatt.close()
+}
 ```
 
 Real-world example:
