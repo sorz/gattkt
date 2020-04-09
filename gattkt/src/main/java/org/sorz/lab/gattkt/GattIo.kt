@@ -216,6 +216,12 @@ class GattIo internal constructor(
         gatt.getService(uuid) ?: throw IOException("missing service $uuid")
 
     /**
+     * Get GATT characteristic, throw IOException if not found.
+     */
+    fun requireCharacteristic(serviceUuid: UUID, charUuid: UUID): BluetoothGattCharacteristic =
+        requireService(serviceUuid).requireCharacteristic(charUuid)
+
+    /**
      * Remove queued notification & indication for given characteristic.
      * The next [readCharacteristicChange] call after it will return fresh value.
      *
@@ -238,3 +244,9 @@ suspend fun BluetoothDevice.connectGattIo(context: Context): GattIo {
     io.connect()
     return io
 }
+
+/**
+ * Get GATT characteristic, throw IOException if not found.
+ */
+fun BluetoothGattService.requireCharacteristic(uuid: UUID): BluetoothGattCharacteristic =
+    getCharacteristic(uuid) ?: throw IOException("missing characteristic $uuid")
