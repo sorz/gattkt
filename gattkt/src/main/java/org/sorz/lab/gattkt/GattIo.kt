@@ -4,9 +4,7 @@ import android.bluetooth.*
 import android.content.Context
 import androidx.collection.CircularArray
 import kotlinx.coroutines.suspendCancellableCoroutine
-import org.jetbrains.anko.AnkoLogger
-import org.jetbrains.anko.debug
-import org.jetbrains.anko.warn
+import mu.KotlinLogging
 import java.io.IOException
 import java.lang.IllegalStateException
 import java.util.*
@@ -24,8 +22,9 @@ private val UUID_CLIENT_CHAR_CONFIG = UUID.fromString("00002902-0000-1000-8000-0
 class GattIo internal constructor(
     private val context: Context,
     val device: BluetoothDevice
-) : AnkoLogger {
+) {
     lateinit var gatt: BluetoothGatt
+    private val logger = KotlinLogging.logger {}
     private var connectContinuation: Continuation<Unit>? = null
     private var charWriteCont: MutableMap<UUID, Continuation<Unit>> = mutableMapOf()
     private var descWriteCont: MutableMap<Pair<UUID, UUID>, Continuation<Unit>> = mutableMapOf()
@@ -37,7 +36,7 @@ class GattIo internal constructor(
             this@GattIo.gatt = gatt
             when (newState) {
                 BluetoothProfile.STATE_CONNECTED -> {
-                    debug { "GATT connected, discover services" }
+                    logger.debug("GATT connected, discover services")
                     if (!gatt.discoverServices())
                         connectContinuation
                             ?.resumeWithException(IOException("fail to discover services"))
@@ -54,7 +53,7 @@ class GattIo internal constructor(
         }
 
         override fun onServicesDiscovered(gatt: BluetoothGatt, status: Int) {
-            debug("service discovered ${gatt.services}")
+            logger.debug { "service discovered ${gatt.services}" }
             connectContinuation?.resume(Unit)
             connectContinuation = null
         }
@@ -64,14 +63,14 @@ class GattIo internal constructor(
             descriptor: BluetoothGattDescriptor,
             status: Int
         ) {
-            debug {
+            logger.debug {
                 "descriptor WRITTEN ${descriptor.characteristic.uuid} $status " +
                         "${descriptor.value?.contentToString()}"
             }
             val key = Pair(descriptor.characteristic.uuid, descriptor.uuid)
             val cont = descWriteCont.remove(key)
             if (cont == null) {
-                warn("descriptor $descriptor not found")
+                logger.warn("descriptor $descriptor not found")
                 return
             }
 
@@ -85,10 +84,12 @@ class GattIo internal constructor(
             gatt: BluetoothGatt,
             char: BluetoothGattCharacteristic, status: Int
         ) {
-            debug { "characteristic WRITTEN ${char.uuid} $status ${char.value?.contentToString()}" }
+            logger.debug {
+                "characteristic WRITTEN ${char.uuid} $status ${char.value?.contentToString()}"
+            }
             val cont = charWriteCont.remove(char.uuid)
             if (cont == null) {
-                warn("characteristic $char not found")
+                logger.warn("characteristic $char not found")
                 return
             }
             if (status != BluetoothGatt.GATT_SUCCESS)
@@ -101,7 +102,7 @@ class GattIo internal constructor(
             gatt: BluetoothGatt,
             char: BluetoothGattCharacteristic
         ) {
-            debug { "characteristic CHANGED ${char.uuid} ${char.value?.contentToString()}" }
+            logger.debug { "characteristic CHANGED ${char.uuid} ${char.value?.contentToString()}" }
             charChangeCont.remove(char.uuid)?.resume(char.value)
                 ?: charChangeQueue.getOrPut(char.uuid) { CircularArray() }.addLast(char.value)
         }
@@ -111,7 +112,7 @@ class GattIo internal constructor(
             char: BluetoothGattCharacteristic,
             status: Int
         ) {
-            debug("characteristic READ ${char.uuid} ${char.value?.contentToString()}")
+            logger.debug { "characteristic READ ${char.uuid} ${char.value?.contentToString()}" }
         }
     }
 
@@ -119,10 +120,10 @@ class GattIo internal constructor(
         if (connectContinuation != null) throw IllegalStateException("repeated invoking connect()")
         suspendCancellableCoroutine { cont: Continuation<Unit> ->
             connectContinuation = cont
-            debug { "connecting to $device" }
+            logger.debug { "connecting to $device" }
             device.connectGatt(context, true, gattCallback)
         }
-        debug { "$device connected" }
+        logger.debug { "$device connected" }
     }
 
     /**
