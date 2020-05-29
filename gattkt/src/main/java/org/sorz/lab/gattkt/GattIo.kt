@@ -2,6 +2,7 @@ package org.sorz.lab.gattkt
 
 import android.bluetooth.*
 import android.content.Context
+import android.os.Build
 import androidx.collection.CircularArray
 import kotlinx.coroutines.suspendCancellableCoroutine
 import mu.KotlinLogging
@@ -121,7 +122,11 @@ class GattIo internal constructor(
         suspendCancellableCoroutine { cont: Continuation<Unit> ->
             connectContinuation = cont
             logger.debug { "connecting to $device" }
-            device.connectGatt(context, true, gattCallback)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                device.connectGatt(context, true, gattCallback, BluetoothDevice.TRANSPORT_LE)
+            } else {
+                device.connectGatt(context, true, gattCallback)
+            }
         }
         logger.debug { "$device connected" }
     }
