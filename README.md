@@ -25,7 +25,7 @@ PR is welcome if you need more functions.
 ```kotlin
 suspend fun handleAwesomeDevice(context: Context, device: BluetoothDevice) {
     val gattIo = device.connectGattIo(context)
-    val service = gattIo.requireCharacteristic(UUID_SOME_SERVICE, UUID_SOME_CHAR)
+    val char = gattIo.requireCharacteristic(UUID_SOME_SERVICE, UUID_SOME_CHAR)
 
     gattIo.enableNotification(char)
     gattIo.writeCharacteristic(char, byteArrayOf(...))
