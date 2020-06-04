@@ -4,6 +4,7 @@ import android.bluetooth.*
 import android.content.Context
 import android.os.Build
 import androidx.collection.CircularArray
+import kotlinx.coroutines.CancellableContinuation
 import kotlinx.coroutines.suspendCancellableCoroutine
 import mu.KotlinLogging
 import java.io.IOException
@@ -119,13 +120,17 @@ class GattIo internal constructor(
 
     internal suspend fun connect() {
         if (connectContinuation != null) throw IllegalStateException("repeated invoking connect()")
-        suspendCancellableCoroutine { cont: Continuation<Unit> ->
+        suspendCancellableCoroutine { cont: CancellableContinuation<Unit> ->
             connectContinuation = cont
             logger.debug { "connecting to $device" }
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            val gatt = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 device.connectGatt(context, true, gattCallback, BluetoothDevice.TRANSPORT_LE)
             } else {
                 device.connectGatt(context, true, gattCallback)
+            }
+            cont.invokeOnCancellation {
+                logger.debug { "connection attempt cancelled" }
+                gatt.disconnect()
             }
         }
         logger.debug { "$device connected" }
