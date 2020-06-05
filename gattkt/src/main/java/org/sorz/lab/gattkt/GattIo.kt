@@ -118,15 +118,15 @@ class GattIo internal constructor(
         }
     }
 
-    internal suspend fun connect() {
+    internal suspend fun connect(autoConnect: Boolean) {
         if (connectContinuation != null) throw IllegalStateException("repeated invoking connect()")
         suspendCancellableCoroutine { cont: CancellableContinuation<Unit> ->
             connectContinuation = cont
             logger.debug { "connecting to $device" }
             val gatt = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                device.connectGatt(context, true, gattCallback, BluetoothDevice.TRANSPORT_LE)
+                device.connectGatt(context, autoConnect, gattCallback, BluetoothDevice.TRANSPORT_LE)
             } else {
-                device.connectGatt(context, true, gattCallback)
+                device.connectGatt(context, autoConnect, gattCallback)
             }
             cont.invokeOnCancellation {
                 logger.debug { "connection attempt cancelled" }
@@ -250,9 +250,12 @@ class GattIo internal constructor(
 /**
  * Connect to GATT and return GattIo. GATT services was discovered before it returned.
  */
-suspend fun BluetoothDevice.connectGattIo(context: Context): GattIo {
+suspend fun BluetoothDevice.connectGattIo(
+    context: Context,
+    autoConnect: Boolean = false
+): GattIo {
     val io = GattIo(context, this)
-    io.connect()
+    io.connect(autoConnect)
     return io
 }
 
